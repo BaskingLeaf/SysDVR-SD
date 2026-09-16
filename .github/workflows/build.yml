@@ -23,7 +23,13 @@ jobs:
           cat payload/project.part.* | base64 -d > project.zip
           unzip -t project.zip
           unzip -q project.zip -d work
-          ls -la work
+
+      - name: Apply current libnx compatibility fix
+        working-directory: work
+        shell: bash
+        run: |
+          set -euxo pipefail
+          sed -i 's/grcdOpen/grcdServiceOpen/g; s/grcdClose/grcdServiceClose/g; s/grcdBegin/grcdServiceBegin/g; s/grcdTransfer/grcdServiceTransfer/g' source/grcd.h source/grcd.c source/capture.c
 
       - name: Build sysmodule
         working-directory: work
