@@ -1,0 +1,39 @@
+name: Build SysDVR-SD Easy Install
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: devkitpro/devkita64:20260219
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build sysmodule
+        shell: bash
+        run: |
+          set -euxo pipefail
+          make clean
+          make -j"$(nproc)"
+          test -s exefs.nsp
+
+      - name: Create SD-root install ZIP
+        shell: bash
+        run: |
+          set -euxo pipefail
+          make package
+          mv SysDVR-SD.zip SysDVR-SD-EasyInstall.zip
+          unzip -l SysDVR-SD-EasyInstall.zip
+
+      - name: Upload easy-install package
+        uses: actions/upload-artifact@v4
+        with:
+          name: SysDVR-SD-EasyInstall
+          path: SysDVR-SD-EasyInstall.zip
+          if-no-files-found: error
+          retention-days: 30
