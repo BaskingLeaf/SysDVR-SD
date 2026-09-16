@@ -14,7 +14,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Restore build project
+        shell: bash
+        run: |
+          set -euxo pipefail
+          rm -rf work project.zip
+          mkdir work
+          base64 -d project.b64 > project.zip
+          unzip -q project.zip -d work
+          ls -la work
+
       - name: Build sysmodule
+        working-directory: work
         shell: bash
         run: |
           set -euxo pipefail
@@ -23,6 +34,7 @@ jobs:
           test -s exefs.nsp
 
       - name: Create SD-root install ZIP
+        working-directory: work
         shell: bash
         run: |
           set -euxo pipefail
@@ -34,6 +46,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: SysDVR-SD-EasyInstall
-          path: SysDVR-SD-EasyInstall.zip
+          path: work/SysDVR-SD-EasyInstall.zip
           if-no-files-found: error
           retention-days: 30
