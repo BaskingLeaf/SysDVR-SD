@@ -20,7 +20,8 @@ jobs:
           set -euxo pipefail
           rm -rf work project.zip
           mkdir work
-          base64 -d project.b64 > project.zip
+          cat payload/project.part.* | base64 -d > project.zip
+          unzip -t project.zip
           unzip -q project.zip -d work
           ls -la work
 
