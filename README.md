@@ -1,5 +1,7 @@
 # SysDVR-SD
 
-Experimental Nintendo Switch Atmosphère sysmodule prototype for recording the Switch gameplay capture stream directly to the microSD card.
+Experimental Atmosphère sysmodule for recording the Nintendo Switch gameplay capture stream directly to microSD, with a Tesla overlay for start/stop control.
 
-This repository is being used to build an easy-install package. **The recorder is experimental and has not yet been hardware-tested.** Do not run it at the same time as normal SysDVR or another `grc:d` capture client.
+The easy-install build contains both the background recorder and `switch/.overlays/SysDVR-SD.ovl`.
+
+**Experimental:** the project compiles with current devkitA64/libnx, but still needs real-hardware testing. Do not run it alongside normal SysDVR, SysDVR-UVC, or another `grc:d` client.
