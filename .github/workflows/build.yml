@@ -3,7 +3,7 @@ name: Build SysDVR-SD Easy Install
 on:
   workflow_dispatch:
   push:
-    branches: [ v0.3-build ]
+    branches: [ v0.3.2-build ]
 
 jobs:
   build:
@@ -25,22 +25,17 @@ jobs:
           unzip -t project.zip
           unzip -q project.zip -d work
 
-      - name: Apply v0.3.1 lite buffered recorder
+      - name: Apply v0.3.2 recovery recorder
         shell: bash
         run: |
           set -euxo pipefail
-          cp v03/main.c work/source/main.c
+          cp v032/main.c work/source/main.c
           cp v03/capture.c work/source/capture.c
-          cp v03/config.h work/source/config.h
-          sed -i 's/#define VIDEO_QUEUE_SLOTS 8u/#define VIDEO_QUEUE_SLOTS 3u/' work/source/config.h
-          sed -i 's/#define AUDIO_QUEUE_SLOTS 64u/#define AUDIO_QUEUE_SLOTS 16u/' work/source/config.h
-          sed -i 's/#define INNER_HEAP_SIZE (512 \* 1024)/#define INNER_HEAP_SIZE (384 * 1024)/' work/source/main.c
-          sed -i 's/u32 __nx_fs_num_sessions = 4;/u32 __nx_fs_num_sessions = 2;/' work/source/main.c
-          sed -i 's/0.3.0-buffered/0.3.1-lite/' work/source/config.h
-          sed -i 's/v0.2 experimental/v0.3.1 lite/g; s/v0.2/v0.3.1/g' work/overlay/source/main.cpp
+          cp v032/config.h work/source/config.h
+          sed -i 's/v0.2 experimental/v0.3.2 recovery/g; s/v0.2/v0.3.2/g' work/overlay/source/main.cpp
           grep SYSDVR_SD_VERSION work/source/config.h
-          grep -E 'VIDEO_QUEUE_SLOTS|AUDIO_QUEUE_SLOTS|AUDIO_BATCH_CHUNKS' work/source/config.h
-          grep -E 'INNER_HEAP_SIZE|__nx_fs_num_sessions' work/source/main.c
+          grep -E 'VIDEO_QUEUE_SLOTS|AUDIO_QUEUE_SLOTS|DIAGNOSTICS_FILE' work/source/config.h
+          grep -E 'video_resync|write_diagnostics|INNER_HEAP_SIZE|__nx_fs_num_sessions' work/source/main.c
 
       - name: Build recorder sysmodule
         working-directory: work
@@ -75,15 +70,15 @@ jobs:
         run: |
           set -euxo pipefail
           make package
-          mv SysDVR-SD.zip Switch-Recorder-Tesla-v0.3.1-lite.zip
-          unzip -t Switch-Recorder-Tesla-v0.3.1-lite.zip
-          unzip -l Switch-Recorder-Tesla-v0.3.1-lite.zip | grep -F 'switch/.overlays/SysDVR-SD.ovl'
-          unzip -l Switch-Recorder-Tesla-v0.3.1-lite.zip | grep -F 'atmosphere/contents/00FF0000A53BB667/exefs.nsp'
+          mv SysDVR-SD.zip Switch-Recorder-Tesla-v0.3.2.zip
+          unzip -t Switch-Recorder-Tesla-v0.3.2.zip
+          unzip -l Switch-Recorder-Tesla-v0.3.2.zip | grep -F 'switch/.overlays/SysDVR-SD.ovl'
+          unzip -l Switch-Recorder-Tesla-v0.3.2.zip | grep -F 'atmosphere/contents/00FF0000A53BB667/exefs.nsp'
 
       - name: Upload easy-install package
         uses: actions/upload-artifact@v4
         with:
-          name: Switch-Recorder-Tesla-v0.3.1-lite
-          path: work/Switch-Recorder-Tesla-v0.3.1-lite.zip
+          name: Switch-Recorder-Tesla-v0.3.2
+          path: work/Switch-Recorder-Tesla-v0.3.2.zip
           if-no-files-found: error
           retention-days: 30
