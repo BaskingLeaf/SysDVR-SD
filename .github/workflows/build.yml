@@ -3,7 +3,7 @@ name: Build SysDVR-SD Easy Install
 on:
   workflow_dispatch:
   push:
-    branches: [ overlay-build ]
+    branches: [ v0.3-build ]
 
 jobs:
   build:
@@ -25,17 +25,16 @@ jobs:
           unzip -t project.zip
           unzip -q project.zip -d work
 
-      - name: Apply v0.2.1 stack fix
-        working-directory: work
+      - name: Apply v0.3 buffered recorder
         shell: bash
         run: |
           set -euxo pipefail
-          sed -i 's/#define INNER_HEAP_SIZE (256 \* 1024)/#define INNER_HEAP_SIZE (512 * 1024)/' source/main.c
-          sed -i 's/#define VIDEO_STACK_SIZE 0x5000/#define VIDEO_STACK_SIZE 0x10000/' source/main.c
-          sed -i 's/#define AUDIO_STACK_SIZE 0x3000/#define AUDIO_STACK_SIZE 0x6000/' source/main.c
-          sed -i 's/0.2.0-overlay-experimental/0.2.1-overlay-stackfix/' source/config.h
-          grep -E 'INNER_HEAP_SIZE|VIDEO_STACK_SIZE|AUDIO_STACK_SIZE' source/main.c
-          grep SYSDVR_SD_VERSION source/config.h
+          cp v03/main.c work/source/main.c
+          cp v03/capture.c work/source/capture.c
+          cp v03/config.h work/source/config.h
+          sed -i 's/v0.2 experimental/v0.3 buffered/g; s/v0.2/v0.3/g' work/overlay/source/main.cpp
+          grep SYSDVR_SD_VERSION work/source/config.h
+          grep -E 'VIDEO_QUEUE_SLOTS|AUDIO_QUEUE_SLOTS|AUDIO_BATCH_CHUNKS' work/source/config.h
 
       - name: Build recorder sysmodule
         working-directory: work
@@ -70,15 +69,15 @@ jobs:
         run: |
           set -euxo pipefail
           make package
-          mv SysDVR-SD.zip SysDVR-SD-EasyInstall-Overlay-v0.2.1.zip
-          unzip -l SysDVR-SD-EasyInstall-Overlay-v0.2.1.zip
-          unzip -l SysDVR-SD-EasyInstall-Overlay-v0.2.1.zip | grep -F 'switch/.overlays/SysDVR-SD.ovl'
-          unzip -l SysDVR-SD-EasyInstall-Overlay-v0.2.1.zip | grep -F 'atmosphere/contents/00FF0000A53BB667/exefs.nsp'
+          mv SysDVR-SD.zip Switch-Recorder-Tesla-v0.3.zip
+          unzip -l Switch-Recorder-Tesla-v0.3.zip
+          unzip -l Switch-Recorder-Tesla-v0.3.zip | grep -F 'switch/.overlays/SysDVR-SD.ovl'
+          unzip -l Switch-Recorder-Tesla-v0.3.zip | grep -F 'atmosphere/contents/00FF0000A53BB667/exefs.nsp'
 
       - name: Upload easy-install package
         uses: actions/upload-artifact@v4
         with:
-          name: SysDVR-SD-EasyInstall-Overlay-v0.2.1
-          path: work/SysDVR-SD-EasyInstall-Overlay-v0.2.1.zip
+          name: Switch-Recorder-Tesla-v0.3
+          path: work/Switch-Recorder-Tesla-v0.3.zip
           if-no-files-found: error
           retention-days: 30
