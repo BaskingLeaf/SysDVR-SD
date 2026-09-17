@@ -1,0 +1,1 @@
+v0.3.6 uses one shared A/V timestamp offset. Video owns HOME/system-UI discontinuity detection and recovery; audio is held until a substantial game IDR re-establishes the shared timeline.
