@@ -39,6 +39,7 @@ jobs:
           sed -i 's/#define AUDIO_QUEUE_SLOTS 16u/#define AUDIO_QUEUE_SLOTS 24u/' work/source/config.h
           sed -i 's/#define FLUSH_EVERY_BYTES (2u \* 1024u \* 1024u)/#define FLUSH_EVERY_BYTES (32u * 1024u * 1024u)/' work/source/config.h
           sed -i 's/uint8_t io_buffer\[64 \* 1024\];/uint8_t io_buffer[256 * 1024];/' work/source/mkv.h
+          echo '#define TIMELINE_GAP_THRESHOLD_US 250000ULL' >> work/source/config.h
 
           # Compact periods where Nintendo's gameplay capture stream disappears
           # (HOME/system UI), then resume on a clean IDR with audio held behind video.
