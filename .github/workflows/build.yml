@@ -25,6 +25,18 @@ jobs:
           unzip -t project.zip
           unzip -q project.zip -d work
 
+      - name: Apply v0.2.1 stack fix
+        working-directory: work
+        shell: bash
+        run: |
+          set -euxo pipefail
+          sed -i 's/#define INNER_HEAP_SIZE (256 \* 1024)/#define INNER_HEAP_SIZE (512 * 1024)/' source/main.c
+          sed -i 's/#define VIDEO_STACK_SIZE 0x5000/#define VIDEO_STACK_SIZE 0x10000/' source/main.c
+          sed -i 's/#define AUDIO_STACK_SIZE 0x3000/#define AUDIO_STACK_SIZE 0x6000/' source/main.c
+          sed -i 's/0.2.0-overlay-experimental/0.2.1-overlay-stackfix/' source/config.h
+          grep -E 'INNER_HEAP_SIZE|VIDEO_STACK_SIZE|AUDIO_STACK_SIZE' source/main.c
+          grep SYSDVR_SD_VERSION source/config.h
+
       - name: Build recorder sysmodule
         working-directory: work
         shell: bash
@@ -58,15 +70,15 @@ jobs:
         run: |
           set -euxo pipefail
           make package
-          mv SysDVR-SD.zip SysDVR-SD-EasyInstall-Overlay.zip
-          unzip -l SysDVR-SD-EasyInstall-Overlay.zip
-          unzip -l SysDVR-SD-EasyInstall-Overlay.zip | grep -F 'switch/.overlays/SysDVR-SD.ovl'
-          unzip -l SysDVR-SD-EasyInstall-Overlay.zip | grep -F 'atmosphere/contents/00FF0000A53BB667/exefs.nsp'
+          mv SysDVR-SD.zip SysDVR-SD-EasyInstall-Overlay-v0.2.1.zip
+          unzip -l SysDVR-SD-EasyInstall-Overlay-v0.2.1.zip
+          unzip -l SysDVR-SD-EasyInstall-Overlay-v0.2.1.zip | grep -F 'switch/.overlays/SysDVR-SD.ovl'
+          unzip -l SysDVR-SD-EasyInstall-Overlay-v0.2.1.zip | grep -F 'atmosphere/contents/00FF0000A53BB667/exefs.nsp'
 
       - name: Upload easy-install package
         uses: actions/upload-artifact@v4
         with:
-          name: SysDVR-SD-EasyInstall-Overlay
-          path: work/SysDVR-SD-EasyInstall-Overlay.zip
+          name: SysDVR-SD-EasyInstall-Overlay-v0.2.1
+          path: work/SysDVR-SD-EasyInstall-Overlay-v0.2.1.zip
           if-no-files-found: error
           retention-days: 30
