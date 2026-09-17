@@ -1,9 +1,9 @@
-name: Build SysDVR-SD Easy Install
+name: Build SysDVR-SD Overlay Easy Install
 
 on:
-  workflow_dispatch:
   push:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -14,24 +14,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Restore build project
+      - name: Restore project
         shell: bash
         run: |
           set -euxo pipefail
-          rm -rf work project.zip
+          rm -rf work
           mkdir work
-          cat payload/project.part.* | base64 -d > project.zip
           unzip -t project.zip
           unzip -q project.zip -d work
 
-      - name: Apply current libnx compatibility fix
+      - name: Fetch libtesla
         working-directory: work
         shell: bash
         run: |
           set -euxo pipefail
-          sed -i 's/grcdOpen/grcdServiceOpen/g; s/grcdClose/grcdServiceClose/g; s/grcdBegin/grcdServiceBegin/g; s/grcdTransfer/grcdServiceTransfer/g' source/grcd.h source/grcd.c source/capture.c
+          git clone --depth 1 https://github.com/WerWolv/libtesla.git overlay/libtesla
 
-      - name: Build sysmodule
+      - name: Build recorder sysmodule
         working-directory: work
         shell: bash
         run: |
@@ -40,19 +39,30 @@ jobs:
           make -j"$(nproc)"
           test -s exefs.nsp
 
-      - name: Create SD-root install ZIP
+      - name: Build Tesla overlay
+        working-directory: work/overlay
+        shell: bash
+        run: |
+          set -euxo pipefail
+          make clean
+          make -j"$(nproc)"
+          test -s SysDVR-SD.ovl
+
+      - name: Package SD-root ZIP
         working-directory: work
         shell: bash
         run: |
           set -euxo pipefail
           make package
-          mv SysDVR-SD.zip SysDVR-SD-EasyInstall.zip
-          unzip -l SysDVR-SD-EasyInstall.zip
+          mv SysDVR-SD.zip SysDVR-SD-Overlay-EasyInstall.zip
+          unzip -l SysDVR-SD-Overlay-EasyInstall.zip
+          test "$(unzip -Z1 SysDVR-SD-Overlay-EasyInstall.zip | grep -c '^switch/.overlays/SysDVR-SD.ovl$')" -eq 1
+          test "$(unzip -Z1 SysDVR-SD-Overlay-EasyInstall.zip | grep -c '^atmosphere/contents/00FF0000A53BB667/exefs.nsp$')" -eq 1
 
-      - name: Upload easy-install package
+      - name: Upload installer
         uses: actions/upload-artifact@v4
         with:
-          name: SysDVR-SD-EasyInstall
-          path: work/SysDVR-SD-EasyInstall.zip
+          name: SysDVR-SD-Overlay-EasyInstall
+          path: work/SysDVR-SD-Overlay-EasyInstall.zip
           if-no-files-found: error
           retention-days: 30
