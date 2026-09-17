@@ -3,7 +3,7 @@ name: Build SysDVR-SD Easy Install
 on:
   workflow_dispatch:
   push:
-    branches: [ v0.3.4-build ]
+    branches: [ v0.3.5-build ]
 
 jobs:
   build:
@@ -25,7 +25,7 @@ jobs:
           unzip -t project.zip
           unzip -q project.zip -d work
 
-      - name: Apply v0.3.4 writer and HOME-gap fixes
+      - name: Apply v0.3.5 writer, HOME-gap and game-start fixes
         shell: bash
         run: |
           set -euxo pipefail
@@ -33,7 +33,7 @@ jobs:
           cp v03/capture.c work/source/capture.c
           cp v032/config.h work/source/config.h
 
-          # Keep the v0.3.3 writer throughput improvements.
+          # Keep v0.3.3 writer throughput improvements.
           sed -i 's/#define WRITER_PRIORITY 45/#define WRITER_PRIORITY 43/' work/source/main.c
           sed -i 's/#define VIDEO_QUEUE_SLOTS 3u/#define VIDEO_QUEUE_SLOTS 5u/' work/source/config.h
           sed -i 's/#define AUDIO_QUEUE_SLOTS 16u/#define AUDIO_QUEUE_SLOTS 24u/' work/source/config.h
@@ -41,15 +41,19 @@ jobs:
           sed -i 's/uint8_t io_buffer\[64 \* 1024\];/uint8_t io_buffer[256 * 1024];/' work/source/mkv.h
           echo '#define TIMELINE_GAP_THRESHOLD_US 250000ULL' >> work/source/config.h
 
-          # Compact periods where Nintendo's gameplay capture stream disappears
-          # (HOME/system UI), then resume on a clean IDR with audio held behind video.
+          # v0.3.4: compact uncapturable HOME/system-UI timeline holes and hold
+          # audio until video has recovered on an IDR.
           python3 v034/timeline_patch.py
 
-          sed -i 's/v0.2 experimental/v0.3.4 home-gap/g; s/v0.2/v0.3.4/g' work/overlay/source/main.cpp
+          # v0.3.5: HOME can also emit continuous tiny black placeholder frames.
+          # Never open/resume the file on those; wait for a substantial game IDR.
+          python3 v035/start_gate_patch.py
+
+          sed -i 's/v0.2 experimental/v0.3.5 game-gate/g; s/v0.2/v0.3.5/g' work/overlay/source/main.cpp
 
           grep SYSDVR_SD_VERSION work/source/config.h
-          grep -E 'VIDEO_QUEUE_SLOTS|AUDIO_QUEUE_SLOTS|FLUSH_EVERY_BYTES|TIMELINE_GAP_THRESHOLD_US' work/source/config.h
-          grep -E 'WRITER_PRIORITY|timeline_gaps|held_for_video_resync' work/source/main.c
+          grep -E 'VIDEO_QUEUE_SLOTS|AUDIO_QUEUE_SLOTS|FLUSH_EVERY_BYTES|TIMELINE_GAP_THRESHOLD_US|ACTIVE_KEYFRAME_MIN_BYTES' work/source/config.h
+          grep -E 'WRITER_PRIORITY|timeline_gaps|held_for_video_resync|ACTIVE_KEYFRAME_MIN_BYTES' work/source/main.c
           grep -E 'io_buffer' work/source/mkv.h
 
       - name: Build recorder sysmodule
@@ -85,15 +89,15 @@ jobs:
         run: |
           set -euxo pipefail
           make package
-          mv SysDVR-SD.zip Switch-Recorder-Tesla-v0.3.4.zip
-          unzip -t Switch-Recorder-Tesla-v0.3.4.zip
-          unzip -l Switch-Recorder-Tesla-v0.3.4.zip | grep -F 'switch/.overlays/SysDVR-SD.ovl'
-          unzip -l Switch-Recorder-Tesla-v0.3.4.zip | grep -F 'atmosphere/contents/00FF0000A53BB667/exefs.nsp'
+          mv SysDVR-SD.zip Switch-Recorder-Tesla-v0.3.5.zip
+          unzip -t Switch-Recorder-Tesla-v0.3.5.zip
+          unzip -l Switch-Recorder-Tesla-v0.3.5.zip | grep -F 'switch/.overlays/SysDVR-SD.ovl'
+          unzip -l Switch-Recorder-Tesla-v0.3.5.zip | grep -F 'atmosphere/contents/00FF0000A53BB667/exefs.nsp'
 
       - name: Upload easy-install package
         uses: actions/upload-artifact@v4
         with:
-          name: Switch-Recorder-Tesla-v0.3.4
-          path: work/Switch-Recorder-Tesla-v0.3.4.zip
+          name: Switch-Recorder-Tesla-v0.3.5
+          path: work/Switch-Recorder-Tesla-v0.3.5.zip
           if-no-files-found: error
           retention-days: 30
