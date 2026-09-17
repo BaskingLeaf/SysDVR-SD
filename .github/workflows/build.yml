@@ -3,7 +3,7 @@ name: Build SysDVR-SD Easy Install
 on:
   workflow_dispatch:
   push:
-    branches: [ v0.3.2-build ]
+    branches: [ v0.3.3-build ]
 
 jobs:
   build:
@@ -25,17 +25,34 @@ jobs:
           unzip -t project.zip
           unzip -q project.zip -d work
 
-      - name: Apply v0.3.2 recovery recorder
+      - name: Apply v0.3.3 writer throughput fix
         shell: bash
         run: |
           set -euxo pipefail
           cp v032/main.c work/source/main.c
           cp v03/capture.c work/source/capture.c
           cp v032/config.h work/source/config.h
-          sed -i 's/v0.2 experimental/v0.3.2 recovery/g; s/v0.2/v0.3.2/g' work/overlay/source/main.cpp
+
+          # v0.3.2 diagnostics proved grc:d was healthy while our queues overflowed.
+          # Give the writer precedence on core 3 so it drains work instead of being
+          # lower-priority than both capture threads.
+          sed -i 's/#define WRITER_PRIORITY 45/#define WRITER_PRIORITY 43/' work/source/main.c
+
+          # Modest emergency headroom, still well below the crashy v0.3 footprint.
+          sed -i 's/#define VIDEO_QUEUE_SLOTS 3u/#define VIDEO_QUEUE_SLOTS 5u/' work/source/config.h
+          sed -i 's/#define AUDIO_QUEUE_SLOTS 16u/#define AUDIO_QUEUE_SLOTS 24u/' work/source/config.h
+
+          # Avoid frequent fflush stalls and combine many small EBML/NAL writes.
+          sed -i 's/#define FLUSH_EVERY_BYTES (2u \* 1024u \* 1024u)/#define FLUSH_EVERY_BYTES (32u * 1024u * 1024u)/' work/source/config.h
+          sed -i 's/uint8_t io_buffer\[64 \* 1024\];/uint8_t io_buffer[256 * 1024];/' work/source/mkv.h
+
+          sed -i 's/0.3.2-recovery/0.3.3-writer/' work/source/config.h
+          sed -i 's/v0.2 experimental/v0.3.3 writer/g; s/v0.2/v0.3.3/g' work/overlay/source/main.cpp
+
           grep SYSDVR_SD_VERSION work/source/config.h
-          grep -E 'VIDEO_QUEUE_SLOTS|AUDIO_QUEUE_SLOTS|DIAGNOSTICS_FILE' work/source/config.h
-          grep -E 'video_resync|write_diagnostics|INNER_HEAP_SIZE|__nx_fs_num_sessions' work/source/main.c
+          grep -E 'VIDEO_QUEUE_SLOTS|AUDIO_QUEUE_SLOTS|FLUSH_EVERY_BYTES' work/source/config.h
+          grep -E 'WRITER_PRIORITY' work/source/main.c
+          grep -E 'io_buffer' work/source/mkv.h
 
       - name: Build recorder sysmodule
         working-directory: work
@@ -70,15 +87,15 @@ jobs:
         run: |
           set -euxo pipefail
           make package
-          mv SysDVR-SD.zip Switch-Recorder-Tesla-v0.3.2.zip
-          unzip -t Switch-Recorder-Tesla-v0.3.2.zip
-          unzip -l Switch-Recorder-Tesla-v0.3.2.zip | grep -F 'switch/.overlays/SysDVR-SD.ovl'
-          unzip -l Switch-Recorder-Tesla-v0.3.2.zip | grep -F 'atmosphere/contents/00FF0000A53BB667/exefs.nsp'
+          mv SysDVR-SD.zip Switch-Recorder-Tesla-v0.3.3.zip
+          unzip -t Switch-Recorder-Tesla-v0.3.3.zip
+          unzip -l Switch-Recorder-Tesla-v0.3.3.zip | grep -F 'switch/.overlays/SysDVR-SD.ovl'
+          unzip -l Switch-Recorder-Tesla-v0.3.3.zip | grep -F 'atmosphere/contents/00FF0000A53BB667/exefs.nsp'
 
       - name: Upload easy-install package
         uses: actions/upload-artifact@v4
         with:
-          name: Switch-Recorder-Tesla-v0.3.2
-          path: work/Switch-Recorder-Tesla-v0.3.2.zip
+          name: Switch-Recorder-Tesla-v0.3.3
+          path: work/Switch-Recorder-Tesla-v0.3.3.zip
           if-no-files-found: error
           retention-days: 30
