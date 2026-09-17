@@ -3,7 +3,7 @@ name: Build SysDVR-SD Easy Install
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [ overlay-build ]
 
 jobs:
   build:
