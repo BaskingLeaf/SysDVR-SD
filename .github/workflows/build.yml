@@ -3,7 +3,7 @@ name: Build SysDVR-SD Easy Install
 on:
   workflow_dispatch:
   push:
-    branches: [ v0.3.6-build ]
+    branches: [ v0.4.0-build ]
 
 jobs:
   build:
@@ -25,7 +25,7 @@ jobs:
           unzip -t project.zip
           unzip -q project.zip -d work
 
-      - name: Apply v0.3.6 shared timeline fix
+      - name: Apply stable v0.3.6 capture core
         shell: bash
         run: |
           set -euxo pipefail
@@ -33,24 +33,30 @@ jobs:
           cp v03/capture.c work/source/capture.c
           cp v032/config.h work/source/config.h
 
-          # Keep the v0.3.3 writer throughput improvements.
           sed -i 's/#define WRITER_PRIORITY 45/#define WRITER_PRIORITY 43/' work/source/main.c
           sed -i 's/#define VIDEO_QUEUE_SLOTS 3u/#define VIDEO_QUEUE_SLOTS 5u/' work/source/config.h
           sed -i 's/#define AUDIO_QUEUE_SLOTS 16u/#define AUDIO_QUEUE_SLOTS 24u/' work/source/config.h
           sed -i 's/#define FLUSH_EVERY_BYTES (2u \* 1024u \* 1024u)/#define FLUSH_EVERY_BYTES (32u * 1024u * 1024u)/' work/source/config.h
           sed -i 's/uint8_t io_buffer\[64 \* 1024\];/uint8_t io_buffer[256 * 1024];/' work/source/mkv.h
-
-          # v0.3.6 replaces the independent v0.3.4 A/V gap offsets with one shared
-          # timeline. Video owns discontinuity/recovery and audio is held until the
-          # real game IDR has re-established the common clock.
           python3 v036/shared_timeline_patch.py
 
-          sed -i 's/v0.2 experimental/v0.3.6 shared-timeline/g; s/v0.2/v0.3.6/g' work/overlay/source/main.cpp
+      - name: Apply v0.4 configuration and UI
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cp v040/runtime_config.c work/source/runtime_config.c
+          cp v040/runtime_config.h work/source/runtime_config.h
+          cp v040/recorder.c work/source/recorder.c
+          cp v040/overlay_main.cpp work/overlay/source/main.cpp
+          cp v040/default_config.ini work/default_config.ini
+          python3 v040/app_patch.py
 
           grep SYSDVR_SD_VERSION work/source/config.h
-          grep -E 'VIDEO_QUEUE_SLOTS|AUDIO_QUEUE_SLOTS|FLUSH_EVERY_BYTES|TIMELINE_GAP_THRESHOLD_US|ACTIVE_KEYFRAME_MIN_BYTES' work/source/config.h
-          grep -E 'WRITER_PRIORITY|timeline_rebases|home_placeholder|held_for_video_resync' work/source/main.c
-          grep -E 'io_buffer' work/source/mkv.h
+          grep -E 'VIDEO_QUEUE_SLOTS|AUDIO_QUEUE_SLOTS|FLUSH_EVERY_BYTES|CONFIG_FILE|CONFIG_RELOAD_FILE' work/source/config.h
+          grep -E 'runtimeConfig|timeline_rebases|home_placeholder|held_for_video_resync' work/source/main.c
+          grep -E 'runtimeConfig|start_tick' work/source/recorder.c
+          grep -F 'v0.4.0' work/overlay/source/main.cpp
+          grep -F 'config.example.ini' work/scripts/package.sh
 
       - name: Build recorder sysmodule
         working-directory: work
@@ -85,15 +91,16 @@ jobs:
         run: |
           set -euxo pipefail
           make package
-          mv SysDVR-SD.zip Switch-Recorder-Tesla-v0.3.6.zip
-          unzip -t Switch-Recorder-Tesla-v0.3.6.zip
-          unzip -l Switch-Recorder-Tesla-v0.3.6.zip | grep -F 'switch/.overlays/SysDVR-SD.ovl'
-          unzip -l Switch-Recorder-Tesla-v0.3.6.zip | grep -F 'atmosphere/contents/00FF0000A53BB667/exefs.nsp'
+          mv SysDVR-SD.zip Switch-Recorder-Tesla-v0.4.0.zip
+          unzip -t Switch-Recorder-Tesla-v0.4.0.zip
+          unzip -l Switch-Recorder-Tesla-v0.4.0.zip | grep -F 'switch/.overlays/SysDVR-SD.ovl'
+          unzip -l Switch-Recorder-Tesla-v0.4.0.zip | grep -F 'atmosphere/contents/00FF0000A53BB667/exefs.nsp'
+          unzip -l Switch-Recorder-Tesla-v0.4.0.zip | grep -F 'switch/SysDVR-SD/config.example.ini'
 
       - name: Upload easy-install package
         uses: actions/upload-artifact@v4
         with:
-          name: Switch-Recorder-Tesla-v0.3.6
-          path: work/Switch-Recorder-Tesla-v0.3.6.zip
+          name: Switch-Recorder-Tesla-v0.4.0
+          path: work/Switch-Recorder-Tesla-v0.4.0.zip
           if-no-files-found: error
           retention-days: 30
