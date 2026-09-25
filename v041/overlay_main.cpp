@@ -543,7 +543,7 @@ public:
 
     void update() override {
         const u64 now = armGetSystemTick();
-        if (armTicksToNs(now - lastRefreshTick) >= 750000000ULL) {
+        if (armTicksToNs(now - lastRefreshTick) >= 2000000000ULL) {
             lastRefreshTick = now;
             writeRequest(kStatusRequestFile, "status\n");
             refreshStatus();
