@@ -119,7 +119,11 @@ static bool saveConfig(const AppConfig& c) {
 
 static bool setRecordingEnabled(bool enabled) {
     ensureDirs();
-    if (enabled) return writeRequest(kControlFile, "enabled\n");
+    if (enabled) {
+        remove(kMarkerResultFile);
+        remove(kStatusFile);
+        return writeRequest(kControlFile, "enabled\n");
+    }
     if (remove(kControlFile) == 0) return true;
     return !fileExists(kControlFile);
 }
