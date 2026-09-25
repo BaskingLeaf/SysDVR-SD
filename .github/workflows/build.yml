@@ -3,7 +3,7 @@ name: Build SysDVR-SD Easy Install
 on:
   workflow_dispatch:
   push:
-    branches: [ v0.4.0-build ]
+    branches: [ v0.4.1-build ]
 
 jobs:
   build:
@@ -40,23 +40,30 @@ jobs:
           sed -i 's/uint8_t io_buffer\[64 \* 1024\];/uint8_t io_buffer[256 * 1024];/' work/source/mkv.h
           python3 v036/shared_timeline_patch.py
 
-      - name: Apply v0.4 configuration and UI
+      - name: Apply v0.4.0 configuration layer
         shell: bash
         run: |
           set -euxo pipefail
           cp v040/runtime_config.c work/source/runtime_config.c
           cp v040/runtime_config.h work/source/runtime_config.h
           cp v040/recorder.c work/source/recorder.c
-          cp v040/overlay_main.cpp work/overlay/source/main.cpp
           cp v040/default_config.ini work/default_config.ini
           python3 v040/app_patch.py
 
+      - name: Apply v0.4.1 markers and live status
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cp v041/overlay_main.cpp work/overlay/source/main.cpp
+          python3 v041/features_patch.py
+
           grep SYSDVR_SD_VERSION work/source/config.h
-          grep -E 'VIDEO_QUEUE_SLOTS|AUDIO_QUEUE_SLOTS|FLUSH_EVERY_BYTES|CONFIG_FILE|CONFIG_RELOAD_FILE' work/source/config.h
-          grep -E 'runtimeConfig|timeline_rebases|home_placeholder|held_for_video_resync' work/source/main.c
-          grep -E 'runtimeConfig|start_tick' work/source/recorder.c
-          grep -F 'v0.4.0' work/overlay/source/main.cpp
-          grep -F 'config.example.ini' work/scripts/package.sh
+          grep -E 'MARKER_REQUEST_FILE|STATUS_REQUEST_FILE|STATUS_FILE' work/source/config.h
+          grep -E 'recorderAddMarker|recorderMarkerCount' work/source/recorder.c
+          grep -E 'handle_marker_request|write_status_snapshot|markers_added' work/source/main.c
+          grep -F 'v0.4.1' work/overlay/source/main.cpp
+          grep -F 'Add marker' work/overlay/source/main.cpp
+          grep -F 'Live health' work/overlay/source/main.cpp
 
       - name: Build recorder sysmodule
         working-directory: work
@@ -91,16 +98,16 @@ jobs:
         run: |
           set -euxo pipefail
           make package
-          mv SysDVR-SD.zip Switch-Recorder-Tesla-v0.4.0.zip
-          unzip -t Switch-Recorder-Tesla-v0.4.0.zip
-          unzip -l Switch-Recorder-Tesla-v0.4.0.zip | grep -F 'switch/.overlays/SysDVR-SD.ovl'
-          unzip -l Switch-Recorder-Tesla-v0.4.0.zip | grep -F 'atmosphere/contents/00FF0000A53BB667/exefs.nsp'
-          unzip -l Switch-Recorder-Tesla-v0.4.0.zip | grep -F 'switch/SysDVR-SD/config.example.ini'
+          mv SysDVR-SD.zip Switch-Recorder-Tesla-v0.4.1.zip
+          unzip -t Switch-Recorder-Tesla-v0.4.1.zip
+          unzip -l Switch-Recorder-Tesla-v0.4.1.zip | grep -F 'switch/.overlays/SysDVR-SD.ovl'
+          unzip -l Switch-Recorder-Tesla-v0.4.1.zip | grep -F 'atmosphere/contents/00FF0000A53BB667/exefs.nsp'
+          unzip -l Switch-Recorder-Tesla-v0.4.1.zip | grep -F 'switch/SysDVR-SD/config.example.ini'
 
       - name: Upload easy-install package
         uses: actions/upload-artifact@v4
         with:
-          name: Switch-Recorder-Tesla-v0.4.0
-          path: work/Switch-Recorder-Tesla-v0.4.0.zip
+          name: Switch-Recorder-Tesla-v0.4.1
+          path: work/Switch-Recorder-Tesla-v0.4.1.zip
           if-no-files-found: error
           retention-days: 30
