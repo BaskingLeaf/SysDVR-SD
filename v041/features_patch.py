@@ -22,6 +22,8 @@ c.write_text(cs)
 # --- recorder.h -------------------------------------------------------------
 h = Path("work/source/recorder.h")
 hs = h.read_text()
+if "#include <stdint.h>" not in hs:
+    hs = "#include <stdint.h>\n" + hs
 if "recorderAddMarker" not in hs:
     hs += '''
 /* v0.4.1 bookmark support. timeline_us is the same shared media timeline fed
@@ -34,6 +36,8 @@ h.write_text(hs)
 # --- recorder.c -------------------------------------------------------------
 r = Path("work/source/recorder.c")
 rs = r.read_text()
+if "#include <unistd.h>" not in rs:
+    rs = rs.replace("#include <sys/statvfs.h>", "#include <sys/statvfs.h>\n#include <unistd.h>")
 
 rs = rs.replace(
     'static char g_current_path[256];',
