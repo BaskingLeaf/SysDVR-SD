@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#111522"><title>Flasks & Gods</title><link rel="stylesheet" href="/style.css"></head>
+<body><main><header><h1>Flasks <em>&</em> Gods</h1><p>WRITE REALITY · STEAL THE QUILL</p></header>
+<section id="lobby" class="panel">
+  <h2>Main menu</h2><div id="resumeBox" class="hidden"><button id="resume" class="wide">Resume previous room</button><button id="forget" class="secondary wide">Forget saved room</button><hr></div>
+  <label for="name">WRITER NAME</label><input id="name" maxlength="24" placeholder="Enter your name" autocomplete="nickname">
+  <button id="create" class="wide">Create a room</button><p class="hint">Or join your opponent:</p>
+  <div class="row"><input id="code" maxlength="5" placeholder="5-letter code" autocapitalize="characters"><button id="join">Join</button></div>
+</section>
+<div id="game" class="hidden">
+  <button id="menu" class="secondary wide">← Main menu</button>
+  <section class="panel">
+    <div class="bar"><small id="room"></small><small id="clock"></small></div>
+    <div id="scores" class="scores"></div><p id="status"></p>
+    <button id="start" class="wide hidden">Start duel</button>
+    <button id="rematch" class="secondary wide hidden">↻ Replay with same players</button>
+    <p id="replayHint" class="hint hidden">The room host can start the rematch.</p>
+    <button id="share" class="secondary wide">Share invitation</button>
+  </section>
+  <section class="panel">
+    <div class="bar"><label>REALITY TREE</label><span id="layer" class="tag"></span></div>
+    <p id="path" class="hint"></p><div id="realities" class="realities"></div>
+    <p class="hint">Open a child with [, return to the parent with ], or revisit an existing child. Each costs 2 points. The tree persists across turns.</p>
+  </section>
+  <section class="panel"><label>THE NESTED SCRIPTURE</label><div id="log" class="log"></div></section>
+  <section id="writer" class="panel hidden">
+    <label>YOU HOLD THE QUILL — <span id="writingAt"></span></label>
+    <textarea id="draft" placeholder="Keep writing..."></textarea>
+    <div class="row"><button id="open" class="secondary">[ Open child · 2</button><button id="close" class="secondary">] Close · 2</button></div>
+    <button id="yield" class="secondary wide">⟧ Yield the quill</button>
+  </section>
+  <section id="watch" class="panel hidden"><label>FOUR LETTERS BEHIND</label><div id="feed"></div><p id="cue" class="hint"></p><button id="interrupt" class="wide red">⟧ INTERRUPT · 3 POINTS</button></section>
+  <section class="panel"><button id="copy" class="wide">Copy scripture for ChatGPT</button><button id="newroom" class="secondary wide">Create a fresh room</button><button id="forgetInGame" class="secondary wide">Leave and forget this room</button><p class="hint">The writing is temporarily stored online. Copy it before leaving a match.</p></section>
+</div>
+<p id="error" role="status"></p><details class="hint"><summary>Rules</summary>
+<p>One writer is God; the other is Flask. The Flask receives text four characters behind. Interrupt for 3 points during the window after a revealed word boundary. Gain a point for each 18 characters the opponent writes. Open, close, or revisit realities with bracket controls for 2 points. Pausing for 6.5 seconds costs a seal. Five seals loses.</p>
+<p><strong>Reality brackets and turn seals are different:</strong> [ and ] navigate universes. ⟧ marks an interruption or handoff; it doesn't close the current universe. The bracket buttons control the structure; typing a bracket in your story is ordinary text.</p>
+</details></main><script src="/client.js" defer></script></body></html>
